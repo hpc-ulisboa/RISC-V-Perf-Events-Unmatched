@@ -6,7 +6,9 @@ This work introduces support for the events of the HiFive Unmatched board.
 ## Please cite
 
 A prior version of this work is documented in https://carrv.github.io/2021/papers/CARRV2021_paper_29_Domingos.pdf.
-If you use this series of patches for your work, please cite and respect the license.
+If you use this series of patches for your work, please cite it
+
+## License
 
 This work is licensed under GNU GPL 2.0.
 

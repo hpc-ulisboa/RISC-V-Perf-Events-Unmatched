@@ -6,7 +6,9 @@ This work introduces support for the events of the HiFive Unmatched board.
 ## Please cite
 
 A prior version of this work is documented in https://carrv.github.io/2021/papers/CARRV2021_paper_29_Domingos.pdf.
-If you use this series of patches for your work, please cite it
+If you use this series of patches for your work, please cite it as:
+
+Domingos, J., Tomas, P., & Sousa, L. (2021). Supporting RISC-V Performance Counters through Performance analysis tools for Linux (Perf). CARRV 21 - Fifth Workshop on Computer Architecture Research with RISC-V.
 
 ## License
 

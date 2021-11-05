@@ -1,0 +1,101 @@
+From: João Mário Domingos <joao.mario@tecnico.ulisboa.pt>
+Date: Fri, 5 Nov 2021 16:21:03 +0000
+Subject: [PATCH 0/4] Introduce pmu-events support for HiFive Unmatched
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This series of patches introduces support for the RISC-V PMU identification and raw events matching between perf and the PMU.
+The HiFive Unmatched board can now use all the counters with named events.
+
+This series has been tested in the HiFive Unmatched board.
+OpenSBI[1] and U-Boot[2] patches are required to test it on the board, alongside with the series of patches that introduce RISC-V Perf support with the SBI PMU and sscofpmf extension [3-4].
+The U-Boot fu740 dts [5] must be updated with the events that will be tested, this comprehends changes to the riscv,raw-event-to-mhpmcounters entry.
+
+Here is the output of perf stat with all the available unmatched events monitoring a stress-ng trignometric stressor.
+
+HiFive Unmatched:
+=================
+perf stat -eexception_taken,integer_load_retired,integer_store_retired,atomic_memory_retired,system_instruction_retired,integer_arithmetic_retired,conditional_branch_retired,jal_instruction_retired,jalr_instruction_retired,integer_multiplication_retired,integer_division_retired,fp_load_retired,fp_store_retired,fp_addition_retired,fp_multiplication_retired,fp_fusedmadd_retired,fp_div_sqrt_retired,other_fp_retired,data_tlb_miss,dcache_miss_mmio_accesses,dcache_writeback,icache_retired,inst_tlb_miss,utlb_miss,addressgen_interlock,longlat_interlock,csr_read_interlock,icache_itim_busy,dcache_dtim_busy,branch_direction_misprediction,branch_target_misprediction,pipe_flush_csr_write,pipe_flush_other_event,integer_multiplication_interlock,fp_interlock stress-ng --cpu 1 --cpu-method trig -t 60s
+stress-ng: info:  [500] setting to a 60 second run per stressor
+stress-ng: info:  [500] dispatching hogs: 1 cpu
+stress-ng: info:  [500] successful run completed in 60.02s (1 min, 0.02 secs)
+
+ Performance counter stats for 'stress-ng --cpu 1 --cpu-method trig -t 60s':
+
+            233185      exception_taken                                               (5.72%)
+        5010843878      integer_load_retired                                          (5.73%)
+        4437123760      integer_store_retired                                         (5.73%)
+            875636      atomic_memory_retired                                         (5.72%)
+         787401517      system_instruction_retired                                     (5.73%)
+       58176497169      integer_arithmetic_retired                                     (5.74%)
+        9689155944      conditional_branch_retired                                     (5.73%)
+        2141143732      jal_instruction_retired                                       (5.72%)
+         624939326      jalr_instruction_retired                                      (5.72%)
+        1900272300      integer_multiplication_retired                                     (5.72%)
+          29231344      integer_division_retired                                      (5.72%)
+        1672274835      fp_load_retired                                               (5.73%)
+         592215149      fp_store_retired                                              (5.73%)
+          13592616      fp_addition_retired                                           (5.73%)
+          13597374      fp_multiplication_retired                                     (5.72%)
+        1331957808      fp_fusedmadd_retired                                          (5.72%)
+         592410829      fp_div_sqrt_retired                                           (5.72%)
+         227334317      other_fp_retired                                              (5.72%)
+          95772283      data_tlb_miss                                                 (5.72%)
+           6291088      dcache_miss_mmio_accesses                                     (5.72%)
+             55591      dcache_writeback                                              (5.72%)
+          47394708      icache_retired                                                (5.72%)
+          62778259      inst_tlb_miss                                                 (5.72%)
+          10159938      utlb_miss                                                     (5.72%)
+         424446212      addressgen_interlock                                          (5.72%)
+         849061809      longlat_interlock                                             (5.72%)
+                 0      csr_read_interlock                                            (5.71%)
+       16924613138      icache_itim_busy                                              (5.71%)
+         204163844      dcache_dtim_busy                                              (5.70%)
+         175163620      branch_direction_misprediction                                     (5.72%)
+         202874026      branch_target_misprediction                                     (5.71%)
+         433228932      pipe_flush_csr_write                                          (5.71%)
+                 0      pipe_flush_other_event                                        (5.71%)
+         429384915      integer_multiplication_interlock                                     (5.71%)
+        8635530214      fp_interlock                                                  (5.71%)
+
+      60.044837787 seconds time elapsed
+
+      60.001431000 seconds user
+       0.033660000 seconds sys
+
+
+[1] https://github.com/atishp04/opensbi/tree/pmu_sscofpmf_v2 
+[2] https://github.com/atishp04/u-boot/tree/hifive_unmatched_dt_pmu
+[3] https://github.com/atishp04/linux/tree/riscv_pmu_v4
+[4] http://lists.infradead.org/pipermail/linux-riscv/2021-October/009408.html
+[5] https://github.com/atishp04/u-boot/blob/hifive_unmatched_dt_pmu/arch/riscv/dts/fu740-c000.dtsi
+
+
+João Mário Domingos (4):
+  RISC-V: Create unique identification for SoC PMU
+  RISC-V: Support CPUID for risc-v in perf
+  RISC-V: Added generic pmu-events mapfile
+  RISC-V: Added HiFive Unmatched PMU events
+
+ arch/riscv/kernel/sbi.c                       |  3 +
+ drivers/perf/riscv_pmu.c                      | 18 ++++
+ drivers/perf/riscv_pmu_sbi.c                  | 46 ++++++++++
+ tools/perf/arch/riscv/util/Build              |  1 +
+ tools/perf/arch/riscv/util/header.c           | 66 +++++++++++++
+ tools/perf/pmu-events/arch/riscv/mapfile.csv  | 15 +++
+ .../pmu-events/arch/riscv/riscv-generic.json  | 20 ++++
+ .../arch/riscv/sifive/u74/instructions.json   | 92 +++++++++++++++++++
+ .../arch/riscv/sifive/u74/memory.json         | 32 +++++++
+ .../arch/riscv/sifive/u74/microarch.json      | 57 ++++++++++++
+ 10 files changed, 350 insertions(+)
+ create mode 100644 tools/perf/arch/riscv/util/header.c
+ create mode 100644 tools/perf/pmu-events/arch/riscv/mapfile.csv
+ create mode 100644 tools/perf/pmu-events/arch/riscv/riscv-generic.json
+ create mode 100644 tools/perf/pmu-events/arch/riscv/sifive/u74/instructions.json
+ create mode 100644 tools/perf/pmu-events/arch/riscv/sifive/u74/memory.json
+ create mode 100644 tools/perf/pmu-events/arch/riscv/sifive/u74/microarch.json
+
+-- 
+2.17.1
+

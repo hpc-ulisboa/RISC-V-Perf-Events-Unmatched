@@ -10,7 +10,7 @@ If you use this series of patches for your work, please cite it
 
 ## License
 
-This work is licensed under GNU GPL 2.0.
+This work is licensed under the MIT license.
 
 ## Prints
 

@@ -12,7 +12,7 @@ The work in these patches is completelly and directly dependent on the proposed 
 
 This series has been tested in the HiFive Unmatched board.
 OpenSBI[1] and U-Boot[2] patches are required to test it on the board, alongside with the series of patches that introduce RISC-V Perf support with the SBI PMU and sscofpmf extension [3-4].
-The U-Boot fu740 dts [5] must be updated with the events that will be tested, this comprehends changes to the riscv,raw-event-to-mhpmcounters entry. Also, an OpenSBI patch [6] proposes bitfield awareness for the DT raw-events, this will simplify, and improve, events description in the DT file. 
+The U-Boot fu740 dts [5] must be updated, may be fixed in future U-BOOT versions, with the events that will be tested, this comprehends changes to the riscv,raw-event-to-mhpmcounters entry. Also, an OpenSBI patch [6] proposes bitfield awareness for the DT raw-events, this will simplify, and improve, events description in the DT file. 
 
 Here is the output of perf list and perf stat with all the available unmatched events monitoring a stress-ng trignometric stressor.
 

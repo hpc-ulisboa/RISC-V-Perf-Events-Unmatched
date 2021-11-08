@@ -8,9 +8,11 @@ Content-Transfer-Encoding: 8bit
 This series of patches introduces support for the RISC-V PMU identification and raw events matching between perf and the PMU.
 The HiFive Unmatched board can now use all the counters with named events.
 
+The work in these patches is completelly and directly dependent on the proposed SBI PMU patch [4], by Atish Patra.
+
 This series has been tested in the HiFive Unmatched board.
 OpenSBI[1] and U-Boot[2] patches are required to test it on the board, alongside with the series of patches that introduce RISC-V Perf support with the SBI PMU and sscofpmf extension [3-4].
-The U-Boot fu740 dts [5] must be updated with the events that will be tested, this comprehends changes to the riscv,raw-event-to-mhpmcounters entry.
+The U-Boot fu740 dts [5] must be updated with the events that will be tested, this comprehends changes to the riscv,raw-event-to-mhpmcounters entry. Also, an OpenSBI patch [6] proposes bitfield awareness for the DT raw-events, this will simplify, and improve, events description in the DT file. 
 
 Here is the output of perf list and perf stat with all the available unmatched events monitoring a stress-ng trignometric stressor.
 
@@ -149,6 +151,7 @@ stress-ng: info:  [500] successful run completed in 60.02s (1 min, 0.02 secs)
 [3] https://github.com/atishp04/linux/tree/riscv_pmu_v4
 [4] http://lists.infradead.org/pipermail/linux-riscv/2021-October/009408.html
 [5] https://github.com/atishp04/u-boot/blob/hifive_unmatched_dt_pmu/arch/riscv/dts/fu740-c000.dtsi
+[6] https://patchwork.ozlabs.org/project/opensbi/patch/20211105013301.27656-1-vincent.chen@sifive.com/
 
 
 João Mário Domingos (4):

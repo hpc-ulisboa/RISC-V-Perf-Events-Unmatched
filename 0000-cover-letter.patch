@@ -153,6 +153,7 @@ stress-ng: info:  [500] successful run completed in 60.02s (1 min, 0.02 secs)
 [5] https://github.com/atishp04/u-boot/blob/hifive_unmatched_dt_pmu/arch/riscv/dts/fu740-c000.dtsi
 [6] https://patchwork.ozlabs.org/project/opensbi/patch/20211105013301.27656-1-vincent.chen@sifive.com/
 
+Signed-off-by: João Mário Domingos <joao.mario@tecnico.ulisboa.pt>
 
 João Mário Domingos (4):
   RISC-V: Create unique identification for SoC PMU

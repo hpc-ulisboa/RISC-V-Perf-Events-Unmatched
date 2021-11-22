@@ -1,0 +1,144 @@
+From 42414290031060880762465e22489b228a6f36f5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jo=C3=A3o=20M=C3=A1rio=20Domingos?=
+ <joao.mario@tecnico.ulisboa.pt>
+Date: Fri, 5 Nov 2021 16:07:25 +0000
+Subject: [PATCH v2 2/4] RISC-V: Support CPUID for risc-v in perf
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch creates the header.c file for the risc-v architecture and introduces support for
+PMU identification through sysfs.
+It is now possible to configure pmu-events in risc-v.
+
+Depends on patch [1], that introduces the id sysfs file.
+
+Signed-off-by: João Mário Domingos <joao.mario@tecnico.ulisboa.pt>
+---
+ drivers/perf/riscv_pmu.c            | 18 ++++++++
+ tools/perf/arch/riscv/util/Build    |  1 +
+ tools/perf/arch/riscv/util/header.c | 66 +++++++++++++++++++++++++++++
+ 3 files changed, 85 insertions(+)
+ create mode 100644 tools/perf/arch/riscv/util/header.c
+
+diff --git a/drivers/perf/riscv_pmu.c b/drivers/perf/riscv_pmu.c
+index 0c853e23f679..3752ffd4edaf 100644
+--- a/drivers/perf/riscv_pmu.c
++++ b/drivers/perf/riscv_pmu.c
+@@ -17,6 +17,23 @@
+ 
+ #include <asm/sbi.h>
+ 
++PMU_FORMAT_ATTR(event, "config:0-63");
++
++static struct attribute *riscv_arch_formats_attr[] = {
++	&format_attr_event.attr,
++	NULL,
++};
++
++static struct attribute_group riscv_pmu_format_group = {
++	.name = "format",
++	.attrs = riscv_arch_formats_attr,
++};
++
++static const struct attribute_group *riscv_pmu_attr_groups[] = {
++	&riscv_pmu_format_group,
++	NULL,
++};
++
+ static unsigned long csr_read_num(int csr_num)
+ {
+ #define switchcase_csr_read(__csr_num, __val)		{\
+@@ -314,6 +331,7 @@ struct riscv_pmu *riscv_pmu_alloc(void)
+ 			cpuc->events[i] = NULL;
+ 	}
+ 	pmu->pmu = (struct pmu) {
++		.attr_groups	= riscv_pmu_attr_groups,
+ 		.event_init	= riscv_pmu_event_init,
+ 		.add		= riscv_pmu_add,
+ 		.del		= riscv_pmu_del,
+diff --git a/tools/perf/arch/riscv/util/Build b/tools/perf/arch/riscv/util/Build
+index 7d3050134ae0..603dbb5ae4dc 100644
+--- a/tools/perf/arch/riscv/util/Build
++++ b/tools/perf/arch/riscv/util/Build
+@@ -1,4 +1,5 @@
+ perf-y += perf_regs.o
++perf-y += header.o
+ 
+ perf-$(CONFIG_DWARF) += dwarf-regs.o
+ perf-$(CONFIG_LIBDW_DWARF_UNWIND) += unwind-libdw.o
+diff --git a/tools/perf/arch/riscv/util/header.c b/tools/perf/arch/riscv/util/header.c
+new file mode 100644
+index 000000000000..b4ca8a768f11
+--- /dev/null
++++ b/tools/perf/arch/riscv/util/header.c
+@@ -0,0 +1,66 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <api/fs/fs.h>
++#include <errno.h>
++#include "../../util/debug.h"
++#include "../../util/header.h"
++
++#define STR_LEN 1024
++#define ID_SIZE 64
++
++static int _get_cpuid(char *buf, size_t sz)
++{
++	const char *sysfs = sysfs__mountpoint();
++	u64 id = 0;
++	char path[PATH_MAX];
++	FILE *file;
++
++	if (!sysfs || sz < ID_SIZE)
++		return -EINVAL;
++
++	scnprintf(path, PATH_MAX, "%s/devices/platform/soc/soc:pmu/id",
++			sysfs);
++
++	file = fopen(path, "r");
++	if (!file) {
++		pr_debug("fopen failed for file %s\n", path);
++		return -EINVAL;
++	}
++	if (!fgets(buf, ID_SIZE, file)) {
++		fclose(file);
++		return -EINVAL;
++	}
++
++	fclose(file);
++
++	/*Check if value is numeric and remove special characters*/
++	id = strtoul(buf, NULL, 16);
++	if (!id)
++		return -EINVAL;
++	scnprintf(buf, ID_SIZE, "0x%lx", id);
++
++	return 0;
++}
++
++char *get_cpuid_str(struct perf_pmu *pmu __maybe_unused)
++{
++	char *buf = NULL;
++	int res;
++
++	if (!pmu)
++		return NULL;
++
++	buf = malloc(ID_SIZE);
++	if (!buf)
++		return NULL;
++
++	/* read id */
++	res = _get_cpuid(buf, ID_SIZE);
++	if (res) {
++		pr_err("failed to get cpuid string for PMU %s\n", pmu->name);
++		free(buf);
++		buf = NULL;
++	}
++
++	return buf;
++}
+-- 
+2.17.1
+
